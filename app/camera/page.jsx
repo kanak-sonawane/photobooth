@@ -46,14 +46,15 @@ function CameraPageContent() {
     }
   };
 
-  // Retake current frame
-  const handleRetake = () => {
+  // Retake specific frame
+  const handleRetake = (frameIndex) => {
     setFrames(prev => {
       const updated = [...prev];
-      updated[currentFrame] = null;
+      updated[frameIndex] = null;
       return updated;
     });
 
+    setCurrentFrame(frameIndex);
     startCamera();
     setIsCameraActive(true);
   };
@@ -97,18 +98,38 @@ function CameraPageContent() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              position: "relative",
             }}
           >
             {frame ? (
-              <img
-                src={frame}
-                alt={`Frame ${index + 1}`}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
+              <>
+                <img
+                  src={frame}
+                  alt={`Frame ${index + 1}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+                {/* Retake button overlay on each captured frame */}
+                <button
+                  onClick={() => handleRetake(index)}
+                  style={{
+                    position: "absolute",
+                    bottom: "8px",
+                    right: "8px",
+                    padding: "4px 8px",
+                    fontSize: "12px",
+                    background: "rgba(255, 255, 255, 0.9)",
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Retake
+                </button>
+              </>
             ) : index === currentFrame && isCameraActive ? (
               <video
                 ref={videoRef}
@@ -131,12 +152,6 @@ function CameraPageContent() {
         {isCameraActive && (
           <button onClick={handleCapture} style={{ marginRight: "8px" }}>
             Capture
-          </button>
-        )}
-
-        {frames[currentFrame] && !isCameraActive && (
-          <button onClick={handleRetake} style={{ marginRight: "8px" }}>
-            Retake
           </button>
         )}
 
