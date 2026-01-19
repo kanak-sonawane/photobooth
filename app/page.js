@@ -8,8 +8,8 @@ export default function Home() {
   return (
     <main style={{ textAlign: "center", marginTop: "40vh" }}>
       <h1>Photobooth</h1>
-      <button onClick={() => router.push("/camera")}>
-        Open Camera
+      <button onClick={() => router.push("/select-frame")}>
+        Select Frames
       </button>
     </main>
   );

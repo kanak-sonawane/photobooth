@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CameraProvider, useCamera } from "./CameraProvider";
 import captureFrame from "./captureFrame";
-import CameraView from "./CameraView";
-
-
-
 
 function CameraPageContent() {
   const { videoRef, startCamera, stopCamera } = useCamera();
-
-  const TOTAL_FRAMES = 3;
+  const searchParams = useSearchParams();
+  
+  // Get frame count from URL, default to 3
+  const TOTAL_FRAMES = parseInt(searchParams.get("frames")) || 3;
+  
   const [frames, setFrames] = useState(Array(TOTAL_FRAMES).fill(null));
   const [currentFrame, setCurrentFrame] = useState(0);
 
