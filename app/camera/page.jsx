@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CameraProvider, useCamera } from "./CameraProvider";
 import captureFrame from "./captureFrame";
@@ -14,10 +14,12 @@ function CameraPageContent() {
   
   const [frames, setFrames] = useState(Array(TOTAL_FRAMES).fill(null));
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [isCameraActive, setIsCameraActive] = useState(false);
 
   // Start camera on mount
   useEffect(() => {
     startCamera();
+    setIsCameraActive(true);
     return () => stopCamera();
   }, []);
 
@@ -32,12 +34,14 @@ function CameraPageContent() {
       return updated;
     });
 
-    stopCamera(); // 🔥 CAMERA OFF AFTER EACH CAPTURE
+    stopCamera();
+    setIsCameraActive(false);
 
     if (currentFrame < TOTAL_FRAMES - 1) {
       setTimeout(() => {
         setCurrentFrame(prev => prev + 1);
-        startCamera(); // restart for next frame
+        startCamera();
+        setIsCameraActive(true);
       }, 300);
     }
   };
@@ -51,6 +55,7 @@ function CameraPageContent() {
     });
 
     startCamera();
+    setIsCameraActive(true);
   };
 
   // HARD EXIT — guaranteed camera release
@@ -104,7 +109,7 @@ function CameraPageContent() {
                   objectFit: "cover",
                 }}
               />
-            ) : index === currentFrame ? (
+            ) : index === currentFrame && isCameraActive ? (
               <video
                 ref={videoRef}
                 autoPlay
@@ -123,13 +128,13 @@ function CameraPageContent() {
 
       {/* CONTROLS */}
       <div style={{ marginTop: "12px" }}>
-        {currentFrame < TOTAL_FRAMES && (
+        {isCameraActive && (
           <button onClick={handleCapture} style={{ marginRight: "8px" }}>
             Capture
           </button>
         )}
 
-        {frames[currentFrame] && (
+        {frames[currentFrame] && !isCameraActive && (
           <button onClick={handleRetake} style={{ marginRight: "8px" }}>
             Retake
           </button>
@@ -144,7 +149,9 @@ function CameraPageContent() {
 export default function CameraPage() {
   return (
     <CameraProvider>
-      <CameraPageContent />
+      <Suspense fallback={<div>Loading...</div>}>
+        <CameraPageContent />
+      </Suspense>
     </CameraProvider>
   );
 }
