@@ -4,14 +4,15 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CameraProvider, useCamera } from "./CameraProvider";
 import captureFrame from "./captureFrame";
+import downloadStrip from "./downloadStrip";
 
 function CameraPageContent() {
   const { videoRef, startCamera, stopCamera } = useCamera();
   const searchParams = useSearchParams();
-  
+
   // Get frame count from URL, default to 3
   const TOTAL_FRAMES = parseInt(searchParams.get("frames")) || 3;
-  
+
   const [frames, setFrames] = useState(Array(TOTAL_FRAMES).fill(null));
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -65,6 +66,8 @@ function CameraPageContent() {
     window.location.replace("/");
   };
 
+  const allFramesCaptured = frames.every(frame => frame !== null);
+
   return (
     <main
       style={{
@@ -79,13 +82,7 @@ function CameraPageContent() {
       <h2>Photobooth</h2>
 
       {/* FRAME STRIP */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
-      >
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {frames.map((frame, index) => (
           <div
             key={index}
@@ -95,9 +92,6 @@ function CameraPageContent() {
               borderRadius: "12px",
               overflow: "hidden",
               background: "#000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               position: "relative",
             }}
           >
@@ -112,7 +106,6 @@ function CameraPageContent() {
                     objectFit: "cover",
                   }}
                 />
-                {/* Retake button overlay on each captured frame */}
                 <button
                   onClick={() => handleRetake(index)}
                   style={{
@@ -121,7 +114,7 @@ function CameraPageContent() {
                     right: "8px",
                     padding: "4px 8px",
                     fontSize: "12px",
-                    background: "rgba(255, 255, 255, 0.9)",
+                    background: "rgba(255,255,255,0.9)",
                     border: "1px solid #ccc",
                     borderRadius: "4px",
                     cursor: "pointer",
@@ -152,6 +145,15 @@ function CameraPageContent() {
         {isCameraActive && (
           <button onClick={handleCapture} style={{ marginRight: "8px" }}>
             Capture
+          </button>
+        )}
+
+        {allFramesCaptured && (
+          <button
+            onClick={() => downloadStrip(frames)}
+            style={{ marginRight: "8px" }}
+          >
+            Download
           </button>
         )}
 
