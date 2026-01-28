@@ -68,6 +68,22 @@ function CameraPageContent() {
 
   const allFramesCaptured = frames.every(frame => frame !== null);
 
+  // Dynamically adjust frame height based on total frames to prevent scrolling
+  const getFrameHeight = () => {
+    switch (TOTAL_FRAMES) {
+      case 3:
+        return "180px"; // Comfortable size for 3 frames
+      case 4:
+        return "140px"; // Slightly smaller for 4
+      case 5:
+        return "110px"; // Compact for 5
+      default:
+        return "140px";
+    }
+  };
+
+  const frameHeight = getFrameHeight();
+
   return (
     <main
       style={{
@@ -77,22 +93,24 @@ function CameraPageContent() {
         alignItems: "center",
         justifyContent: "center",
         gap: "12px",
+        padding: "20px 20px 30px 20px",
       }}
     >
-      <h2>Photobooth</h2>
+      <h2 style={{ margin: "0 0 8px 0" }}>Photobooth</h2>
 
-      {/* FRAME STRIP */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {/* VERTICAL FRAME STRIP - Classic Photobooth Style */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {frames.map((frame, index) => (
           <div
             key={index}
             style={{
-              width: "260px",
-              height: "140px",
-              borderRadius: "12px",
+              width: "280px",
+              height: frameHeight,
+              borderRadius: "8px",
               overflow: "hidden",
               background: "#000",
               position: "relative",
+              border: index === currentFrame && isCameraActive ? "3px solid #a3cefd" : "none",
             }}
           >
             {frame ? (
@@ -110,14 +128,15 @@ function CameraPageContent() {
                   onClick={() => handleRetake(index)}
                   style={{
                     position: "absolute",
-                    bottom: "8px",
-                    right: "8px",
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    background: "rgba(255,255,255,0.9)",
-                    border: "1px solid #ccc",
+                    bottom: "6px",
+                    right: "6px",
+                    padding: "4px 10px",
+                    fontSize: "11px",
+                    background: "rgba(255,255,255,0.95)",
+                    border: "none",
                     borderRadius: "4px",
                     cursor: "pointer",
+                    fontWeight: "600",
                   }}
                 >
                   Retake
@@ -135,15 +154,42 @@ function CameraPageContent() {
                   objectFit: "cover",
                 }}
               />
-            ) : null}
+            ) : (
+              // Empty frame placeholder
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#666",
+                  fontSize: "14px",
+                }}
+              >
+                Frame {index + 1}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       {/* CONTROLS */}
-      <div style={{ marginTop: "12px" }}>
+      <div style={{ marginTop: "8px", display: "flex", gap: "10px" }}>
         {isCameraActive && (
-          <button onClick={handleCapture} style={{ marginRight: "8px" }}>
+          <button
+            onClick={handleCapture}
+            style={{
+              padding: "12px 28px",
+              fontSize: "16px",
+              fontWeight: "600",
+              background: " #a3cefd",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
             Capture
           </button>
         )}
@@ -151,13 +197,36 @@ function CameraPageContent() {
         {allFramesCaptured && (
           <button
             onClick={() => downloadStrip(frames)}
-            style={{ marginRight: "8px" }}
+            style={{
+              padding: "12px 28px",
+              fontSize: "16px",
+              fontWeight: "600",
+              background: "#71ac7e",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
           >
-            Download
+             Download
           </button>
         )}
 
-        <button onClick={handleBack}>Back</button>
+        <button
+          onClick={handleBack}
+          style={{
+            padding: "12px 28px",
+            fontSize: "16px",
+            fontWeight: "600",
+            background: "#6c757d",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          ← Back
+        </button>
       </div>
     </main>
   );

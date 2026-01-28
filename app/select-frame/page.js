@@ -6,13 +6,35 @@ export default function SelectFrame() {
   const router = useRouter();
 
   const frameLayouts = [
-    { id: 1, count: 1, label: "1 Frame" },
-    { id: 2, count: 2, label: "2 Frames" },
     { id: 3, count: 3, label: "3 Frames" },
+    { id: 4, count: 4, label: "4 Frames" },
+    { id: 5, count: 5, label: "5 Frames" },
   ];
 
   const handleSelectLayout = (frameCount) => {
     router.push(`/camera?frames=${frameCount}`);
+  };
+
+  // Helper to render vertical strip preview based on frame count
+  const renderPreview = (count) => {
+    // Adjust mini frame height based on total count to fit in container
+    const frameHeight = count === 3 ? "45px" : count === 4 ? "35px" : "28px";
+    
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        {Array.from({ length: count }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              width: "80px",
+              height: frameHeight,
+              background: "#ddd",
+              borderRadius: "4px",
+            }}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -27,7 +49,7 @@ export default function SelectFrame() {
       }}
     >
       <h2>Select Frame Layout</h2>
-      
+
       <div
         style={{
           display: "flex",
@@ -53,22 +75,19 @@ export default function SelectFrame() {
               borderRadius: "12px",
               background: "#fff",
               fontSize: "16px",
+              transition: "all 0.2s",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.borderColor = "#007bff";
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.borderColor = "#ccc";
+              e.currentTarget.style.transform = "scale(1)";
             }}
           >
-            {/* Visual representation of frames */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {Array.from({ length: layout.count }).map((_, index) => (
-                <div
-                  key={index}
-                  style={{
-                    width: "80px",
-                    height: layout.count === 1 ? "100px" : "30px",
-                    background: "#ddd",
-                    borderRadius: "4px",
-                  }}
-                />
-              ))}
-            </div>
+            {/* Visual representation of vertical frames */}
+            {renderPreview(layout.count)}
             <span style={{ fontWeight: "bold" }}>{layout.label}</span>
           </button>
         ))}
