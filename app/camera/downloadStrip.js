@@ -12,18 +12,17 @@ export default async function downloadStrip(frames) {
     })
   );
 
-  // Target dimensions for each frame in the downloaded strip (wider and shorter)
-  // High resolution for mobile screens
-  const targetFrameWidth = 1800;  // 3x larger for retina displays
-  const targetFrameHeight = 1200; // 3x larger for retina displays
+  // Use original frame dimensions from camera
+  const frameWidth = images[0].width;
+  const frameHeight = images[0].height;
 
   // Calculate final strip dimensions
   const padding = 40; // Space between frames (scaled up)
   const stripPadding = 80; // Border around entire strip (scaled up)
 
   const canvas = document.createElement("canvas");
-  canvas.width = targetFrameWidth + (stripPadding * 2);
-  canvas.height = (targetFrameHeight * validFrames.length) + (padding * (validFrames.length - 1)) + (stripPadding * 2);
+  canvas.width = frameWidth + (stripPadding * 2);
+  canvas.height = (frameHeight * validFrames.length) + (padding * (validFrames.length - 1)) + (stripPadding * 2);
 
   const ctx = canvas.getContext("2d");
 
@@ -31,11 +30,11 @@ export default async function downloadStrip(frames) {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw each frame resized to target dimensions
+  // Draw each frame at original size
   let yOffset = stripPadding;
   images.forEach(img => {
-    ctx.drawImage(img, stripPadding, yOffset, targetFrameWidth, targetFrameHeight);
-    yOffset += targetFrameHeight + padding;
+    ctx.drawImage(img, stripPadding, yOffset, frameWidth, frameHeight);
+    yOffset += frameHeight + padding;
   });
 
   // Download
