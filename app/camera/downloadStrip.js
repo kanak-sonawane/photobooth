@@ -1,4 +1,3 @@
-//app\camera\downloadStrip.js
 export default async function downloadStrip(frames) {
   const validFrames = frames.filter(Boolean);
   if (validFrames.length === 0) return;
@@ -14,12 +13,13 @@ export default async function downloadStrip(frames) {
   );
 
   // Target dimensions for each frame in the downloaded strip (wider and shorter)
-  const targetFrameWidth = 600;
-  const targetFrameHeight = 400;
+  // High resolution for mobile screens
+  const targetFrameWidth = 1800;  // 3x larger for retina displays
+  const targetFrameHeight = 1200; // 3x larger for retina displays
 
   // Calculate final strip dimensions
-  const padding = 15; // Space between frames
-  const stripPadding = 30; // Border around entire strip
+  const padding = 40; // Space between frames (scaled up)
+  const stripPadding = 80; // Border around entire strip (scaled up)
 
   const canvas = document.createElement("canvas");
   canvas.width = targetFrameWidth + (stripPadding * 2);
