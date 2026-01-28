@@ -1,3 +1,4 @@
+//app\camera\captureFrame.js
 export default function captureFrame(videoElement) {
   if (!videoElement) return null;
 

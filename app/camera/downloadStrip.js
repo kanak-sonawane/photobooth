@@ -1,3 +1,4 @@
+//app\camera\downloadStrip.js
 export default async function downloadStrip(frames) {
   const validFrames = frames.filter(Boolean);
   if (validFrames.length === 0) return;
@@ -12,23 +13,34 @@ export default async function downloadStrip(frames) {
     })
   );
 
-  const width = images[0].width;
-  const height = images.reduce((sum, img) => sum + img.height, 0);
+  // Target dimensions for each frame in the downloaded strip (wider and shorter)
+  const targetFrameWidth = 600;
+  const targetFrameHeight = 400;
+
+  // Calculate final strip dimensions
+  const padding = 15; // Space between frames
+  const stripPadding = 30; // Border around entire strip
 
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = targetFrameWidth + (stripPadding * 2);
+  canvas.height = (targetFrameHeight * validFrames.length) + (padding * (validFrames.length - 1)) + (stripPadding * 2);
 
   const ctx = canvas.getContext("2d");
 
-  let yOffset = 0;
+  // White background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw each frame resized to target dimensions
+  let yOffset = stripPadding;
   images.forEach(img => {
-    ctx.drawImage(img, 0, yOffset);
-    yOffset += img.height;
+    ctx.drawImage(img, stripPadding, yOffset, targetFrameWidth, targetFrameHeight);
+    yOffset += targetFrameHeight + padding;
   });
 
+  // Download
   const link = document.createElement("a");
-  link.download = "photobooth.png";
+  link.download = `photobooth-${Date.now()}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
