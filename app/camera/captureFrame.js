@@ -5,8 +5,8 @@ export default function captureFrame(videoElement) {
   
   // Match the aspect ratio from camera preview (wider and shorter)
   // Using ratio similar to what's displayed: approximately 2.5:1 (width:height)
-  const targetWidth = 1920;  // High res for quality
-  const targetHeight = 768;  // Wider/shorter ratio
+  const targetWidth = 1650;  // High res for quality
+  const targetHeight = 850;  // Wider/shorter ratio
   
   canvas.width = targetWidth;
   canvas.height = targetHeight;
