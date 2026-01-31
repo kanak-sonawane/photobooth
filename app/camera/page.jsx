@@ -10,12 +10,14 @@ function CameraPageContent() {
   const { videoRef, startCamera, stopCamera } = useCamera();
   const searchParams = useSearchParams();
 
-  // Get frame count from URL, default to 3
   const TOTAL_FRAMES = parseInt(searchParams.get("frames")) || 3;
 
   const [frames, setFrames] = useState(Array(TOTAL_FRAMES).fill(null));
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isCameraActive, setIsCameraActive] = useState(false);
+
+  const [countdown, setCountdown] = useState(null);
+  const [countdownRunning, setCountdownRunning] = useState(false);
 
   // Start camera on mount
   useEffect(() => {
@@ -24,7 +26,35 @@ function CameraPageContent() {
     return () => stopCamera();
   }, []);
 
-  // Capture current frame
+  // Auto-countdown ONLY for frames after the first (frame 1, 2, 3, 4...)
+  useEffect(() => {
+    if (!isCameraActive || currentFrame === 0 || countdownRunning) return;
+
+    startCountdown();
+  }, [isCameraActive, currentFrame]);
+
+  // Start countdown function
+  const startCountdown = () => {
+    if (countdownRunning) return;
+
+    setCountdownRunning(true);
+    let value = 3;
+    setCountdown(value);
+
+    const interval = setInterval(() => {
+      value -= 1;
+      if (value === 0) {
+        clearInterval(interval);
+        setCountdown(null);
+        setCountdownRunning(false);
+        handleCapture();
+      } else {
+        setCountdown(value);
+      }
+    }, 1000);
+  };
+
+  // ORIGINAL capture logic - UNCHANGED
   const handleCapture = () => {
     const image = captureFrame(videoRef.current);
     if (!image) return;
@@ -47,7 +77,6 @@ function CameraPageContent() {
     }
   };
 
-  // Retake specific frame
   const handleRetake = (frameIndex) => {
     setFrames(prev => {
       const updated = [...prev];
@@ -60,7 +89,6 @@ function CameraPageContent() {
     setIsCameraActive(true);
   };
 
-  // HARD EXIT — guaranteed camera release
   const handleBack = () => {
     stopCamera();
     window.location.replace("/");
@@ -68,15 +96,14 @@ function CameraPageContent() {
 
   const allFramesCaptured = frames.every(frame => frame !== null);
 
-  // Dynamically adjust frame height based on total frames to prevent scrolling
   const getFrameHeight = () => {
     switch (TOTAL_FRAMES) {
       case 3:
-        return "180px"; // Comfortable size for 3 frames
+        return "180px";
       case 4:
-        return "140px"; // Slightly smaller for 4
+        return "140px";
       case 5:
-        return "110px"; // Compact for 5
+        return "110px";
       default:
         return "140px";
     }
@@ -93,12 +120,11 @@ function CameraPageContent() {
         alignItems: "center",
         justifyContent: "center",
         gap: "12px",
-        padding: "20px 20px 30px 20px",
+        padding: "20px",
       }}
     >
       <h2 style={{ margin: "0 0 8px 0" }}>Photobooth</h2>
 
-      {/* VERTICAL FRAME STRIP - Classic Photobooth Style */}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {frames.map((frame, index) => (
           <div
@@ -110,7 +136,10 @@ function CameraPageContent() {
               overflow: "hidden",
               background: "#000",
               position: "relative",
-              border: index === currentFrame && isCameraActive ? "3px solid #a3cefd" : "none",
+              border:
+                index === currentFrame && isCameraActive
+                  ? "3px solid #a3cefd"
+                  : "none",
             }}
           >
             {frame ? (
@@ -118,11 +147,7 @@ function CameraPageContent() {
                 <img
                   src={frame}
                   alt={`Frame ${index + 1}`}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
                 <button
                   onClick={() => handleRetake(index)}
@@ -143,19 +168,35 @@ function CameraPageContent() {
                 </button>
               </>
             ) : index === currentFrame && isCameraActive ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+
+                {/* COUNTDOWN OVERLAY */}
+                {countdown && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "64px",
+                      fontWeight: "800",
+                      color: "#fff",
+                      background: "rgba(0,0,0,0.4)",
+                    }}
+                  >
+                    {countdown}
+                  </div>
+                )}
+              </>
             ) : (
-              // Empty frame placeholder
               <div
                 style={{
                   width: "100%",
@@ -164,7 +205,6 @@ function CameraPageContent() {
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#666",
-                  fontSize: "14px",
                 }}
               >
                 Frame {index + 1}
@@ -174,60 +214,58 @@ function CameraPageContent() {
         ))}
       </div>
 
-      {/* CONTROLS */}
-      <div style={{ marginTop: "8px", display: "flex", gap: "10px" }}>
-        {isCameraActive && (
-          <button
-            onClick={handleCapture}
-            style={{
-              padding: "12px 28px",
-              fontSize: "16px",
-              fontWeight: "600",
-              background: " #a3cefd",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-          >
-            Capture
-          </button>
-        )}
-
-        {allFramesCaptured && (
-          <button
-            onClick={() => downloadStrip(frames)}
-            style={{
-              padding: "12px 28px",
-              fontSize: "16px",
-              fontWeight: "600",
-              background: "#71ac7e",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-          >
-             Download
-          </button>
-        )}
-
+      {/* Start button ONLY for first frame */}
+      {isCameraActive && !countdownRunning && currentFrame === 0 && (
         <button
-          onClick={handleBack}
+          onClick={startCountdown}
           style={{
             padding: "12px 28px",
             fontSize: "16px",
             fontWeight: "600",
-            background: "#6c757d",
+            background: "#007bff",
             color: "#fff",
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
           }}
         >
-          ← Back
+          📷 Start
         </button>
-      </div>
+      )}
+
+      {allFramesCaptured && (
+        <button
+          onClick={() => downloadStrip(frames)}
+          style={{
+            padding: "12px 28px",
+            fontSize: "16px",
+            fontWeight: "600",
+            background: "#71ac7e",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          Download
+        </button>
+      )}
+
+      <button
+        onClick={handleBack}
+        style={{
+          padding: "12px 28px",
+          fontSize: "16px",
+          fontWeight: "600",
+          background: "#6c757d",
+          color: "#fff",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+        }}
+      >
+        ← Back
+      </button>
     </main>
   );
 }
