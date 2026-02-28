@@ -1,7 +1,8 @@
+//app\camera\page.jsx
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { CameraProvider, useCamera } from "./CameraProvider";
 import captureFrame from "./captureFrame";
 import downloadStrip from "./downloadStrip";
@@ -9,6 +10,7 @@ import downloadStrip from "./downloadStrip";
 function CameraPageContent() {
   const { videoRef, startCamera, stopCamera } = useCamera();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const TOTAL_FRAMES = parseInt(searchParams.get("frames")) || 3;
 
@@ -96,6 +98,29 @@ function CameraPageContent() {
 
   const allFramesCaptured = frames.every(frame => frame !== null);
 
+  // Handle what happens after all frames are captured
+  const handleContinue = () => {
+    stopCamera();
+    
+    // Only 4 frames goes to customize page
+    if (TOTAL_FRAMES === 4) {
+      // Generate session ID and store frames
+      const sessionId = Date.now().toString();
+      
+      if (typeof window !== 'undefined') {
+        if (!window.__PHOTOBOOTH__) {
+          window.__PHOTOBOOTH__ = {};
+        }
+        window.__PHOTOBOOTH__[sessionId] = frames;
+      }
+      
+      router.push(`/customize?frames=${TOTAL_FRAMES}&session=${sessionId}`);
+    } else {
+      // 3 and 5 frames: direct download
+      downloadStrip(frames);
+    }
+  };
+
   const getFrameHeight = () => {
     switch (TOTAL_FRAMES) {
       case 3:
@@ -147,7 +172,7 @@ function CameraPageContent() {
                 <img
                   src={frame}
                   alt={`Frame ${index + 1}`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
                 />
                 <button
                   onClick={() => handleRetake(index)}
@@ -174,7 +199,7 @@ function CameraPageContent() {
                   autoPlay
                   playsInline
                   muted
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
                 />
 
                 {/* COUNTDOWN OVERLAY */}
@@ -235,19 +260,19 @@ function CameraPageContent() {
 
       {allFramesCaptured && (
         <button
-          onClick={() => downloadStrip(frames)}
+          onClick={handleContinue}
           style={{
             padding: "12px 28px",
             fontSize: "16px",
             fontWeight: "600",
-            background: "#71ac7e",
+            background: TOTAL_FRAMES === 4 ? "#28a745" : "#007bff",
             color: "#fff",
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
           }}
         >
-          Download
+          {TOTAL_FRAMES === 4 ? "✨ Customize" : "⬇️ Download"}
         </button>
       )}
 
