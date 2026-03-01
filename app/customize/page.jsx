@@ -62,6 +62,40 @@ function CustomizePageContent() {
     }
   }, [frames, selectedBg]);
 
+  /**
+   * Draws an image into a slot using "cover" fitting — like CSS object-fit: cover.
+   * Crops the image from the center so it fills the slot without any stretching,
+   * regardless of whether the photo came from a landscape desktop webcam or
+   * a portrait mobile camera.
+   */
+  const drawCoverFit = (ctx, img, slot) => {
+    const { x, y, width, height } = slot;
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const slotAspect = width / height;
+
+    let srcX = 0, srcY = 0, srcW = img.naturalWidth, srcH = img.naturalHeight;
+
+    if (imgAspect > slotAspect) {
+      // Image is wider than the slot → crop the left/right sides
+      srcH = img.naturalHeight;
+      srcW = img.naturalHeight * slotAspect;
+      srcX = (img.naturalWidth - srcW) / 2;
+    } else {
+      // Image is taller than the slot → crop the top/bottom
+      srcW = img.naturalWidth;
+      srcH = img.naturalWidth / slotAspect;
+      srcY = (img.naturalHeight - srcH) / 2;
+    }
+
+    // Clip to the slot bounds so nothing bleeds outside
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.clip();
+    ctx.drawImage(img, srcX, srcY, srcW, srcH, x, y, width, height);
+    ctx.restore();
+  };
+
   const renderPreview = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -78,7 +112,7 @@ function CustomizePageContent() {
     canvas.width = baseWidth * scale;   // 512
     canvas.height = baseHeight * scale; // 1620
 
-    // Display at 2x size (256x810) - looks same as before
+    // Display at 2x size (256x810) — looks same as before on desktop
     canvas.style.width = baseWidth * 2 + "px";
     canvas.style.height = baseHeight * 2 + "px";
 
@@ -90,7 +124,7 @@ function CustomizePageContent() {
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw photos at high resolution
+    // Draw photos using cover-fit to prevent stretching on any device/orientation
     const photoPromises = frames
       .slice(0, bg.slots.length)
       .map((frameData, i) => {
@@ -98,13 +132,7 @@ function CustomizePageContent() {
           const slot = bg.slots[i];
           const photoImage = new Image();
           photoImage.onload = () => {
-            ctx.drawImage(
-              photoImage,
-              slot.x,
-              slot.y,
-              slot.width,
-              slot.height
-            );
+            drawCoverFit(ctx, photoImage, slot);
             resolve();
           };
           photoImage.onerror = () => {
@@ -203,6 +231,9 @@ function CustomizePageContent() {
             style={{
               border: "2px solid #ccc",
               borderRadius: "8px",
+              // Ensure canvas never overflows on small screens
+              maxWidth: "100%",
+              height: "auto",
             }}
           />
         </div>
