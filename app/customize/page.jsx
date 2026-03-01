@@ -42,13 +42,14 @@ function CustomizePageContent() {
           id: "pink-frame",
           name: "Pink Frame",
           path: "/backgrounds/4-frames/pink-frame.png",
-          // HIGH RES: 4x scale for quality (512x1620)
-          // Slots scaled proportionally
+          // Slots measured pixel-perfectly from the actual frame image (128x405 native)
+          // then scaled 4x to match the 512x1620 canvas.
+          // Each slot fills exactly the black cutout window in the frame — no white gaps.
           slots: [
-            { x: 32, y: 32, width: 448, height: 320 },    // Slot 1
-            { x: 32, y: 384, width: 448, height: 320 },   // Slot 2
-            { x: 32, y: 736, width: 448, height: 320 },   // Slot 3
-            { x: 32, y: 1088, width: 448, height: 320 },  // Slot 4
+            { x: 24, y: 36,   width: 472, height: 316 }, // Slot 1
+            { x: 24, y: 376,  width: 472, height: 316 }, // Slot 2
+            { x: 24, y: 716,  width: 468, height: 320 }, // Slot 3
+            { x: 24, y: 1056, width: 468, height: 320 }, // Slot 4
           ],
         },
       ]);
@@ -64,9 +65,8 @@ function CustomizePageContent() {
 
   /**
    * Draws an image into a slot using "cover" fitting — like CSS object-fit: cover.
-   * Crops the image from the center so it fills the slot without any stretching,
-   * regardless of whether the photo came from a landscape desktop webcam or
-   * a portrait mobile camera.
+   * Crops from the center so the photo fills the slot without stretching,
+   * works for both landscape (desktop webcam) and portrait (mobile camera).
    */
   const drawCoverFit = (ctx, img, slot) => {
     const { x, y, width, height } = slot;
@@ -76,18 +76,18 @@ function CustomizePageContent() {
     let srcX = 0, srcY = 0, srcW = img.naturalWidth, srcH = img.naturalHeight;
 
     if (imgAspect > slotAspect) {
-      // Image is wider than the slot → crop the left/right sides
+      // Image is wider than the slot → crop the sides
       srcH = img.naturalHeight;
       srcW = img.naturalHeight * slotAspect;
       srcX = (img.naturalWidth - srcW) / 2;
     } else {
-      // Image is taller than the slot → crop the top/bottom
+      // Image is taller than the slot → crop top/bottom
       srcW = img.naturalWidth;
       srcH = img.naturalWidth / slotAspect;
       srcY = (img.naturalHeight - srcH) / 2;
     }
 
-    // Clip to the slot bounds so nothing bleeds outside
+    // Clip to slot bounds so nothing bleeds outside the window
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, width, height);
@@ -112,19 +112,18 @@ function CustomizePageContent() {
     canvas.width = baseWidth * scale;   // 512
     canvas.height = baseHeight * scale; // 1620
 
-    // Display at 2x size (256x810) — looks same as before on desktop
+    // Display at 2x size (256x810)
     canvas.style.width = baseWidth * 2 + "px";
     canvas.style.height = baseHeight * 2 + "px";
 
-    // Enable image smoothing for better quality
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingQuality = "high";
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw photos using cover-fit to prevent stretching on any device/orientation
+    // Draw photos using cover-fit — no stretching on any device
     const photoPromises = frames
       .slice(0, bg.slots.length)
       .map((frameData, i) => {
@@ -145,7 +144,7 @@ function CustomizePageContent() {
 
     await Promise.all(photoPromises);
 
-    // Draw frame overlay at high resolution
+    // Draw frame overlay on top
     await new Promise((resolve) => {
       const bgImage = new Image();
       bgImage.onload = () => {
@@ -153,13 +152,13 @@ function CustomizePageContent() {
         resolve();
       };
       bgImage.onerror = () => {
-        console.error('Failed to load background frame');
+        console.error("Failed to load background frame");
         resolve();
       };
       bgImage.src = bg.path;
     });
 
-    console.log('High-res preview rendered: 512x1620');
+    console.log("High-res preview rendered: 512x1620");
   };
 
   const handleDownload = () => {
@@ -171,22 +170,14 @@ function CustomizePageContent() {
     link.click();
 
     const sessionId = searchParams.get("session");
-    if (
-      typeof window !== "undefined" &&
-      sessionId &&
-      window.__PHOTOBOOTH__
-    ) {
+    if (typeof window !== "undefined" && sessionId && window.__PHOTOBOOTH__) {
       delete window.__PHOTOBOOTH__[sessionId];
     }
   };
 
   const handleBack = () => {
     const sessionId = searchParams.get("session");
-    if (
-      typeof window !== "undefined" &&
-      sessionId &&
-      window.__PHOTOBOOTH__
-    ) {
+    if (typeof window !== "undefined" && sessionId && window.__PHOTOBOOTH__) {
       delete window.__PHOTOBOOTH__[sessionId];
     }
     router.push("/camera?frames=" + frameCount);
@@ -231,7 +222,6 @@ function CustomizePageContent() {
             style={{
               border: "2px solid #ccc",
               borderRadius: "8px",
-              // Ensure canvas never overflows on small screens
               maxWidth: "100%",
               height: "auto",
             }}
@@ -240,41 +230,25 @@ function CustomizePageContent() {
 
         <div style={{ maxWidth: "300px" }}>
           <h3 style={{ marginBottom: "10px" }}>Choose Background</h3>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-            }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {backgrounds.map((bg) => (
               <button
                 key={bg.id}
                 onClick={() => setSelectedBg(bg.id)}
                 style={{
                   padding: "10px",
-                  border:
-                    selectedBg === bg.id
-                      ? "3px solid #007bff"
-                      : "2px solid #ccc",
+                  border: selectedBg === bg.id ? "3px solid #007bff" : "2px solid #ccc",
                   borderRadius: "8px",
-                  background:
-                    selectedBg === bg.id ? "#e7f3ff" : "#fff",
+                  background: selectedBg === bg.id ? "#e7f3ff" : "#fff",
                   cursor: "pointer",
                   textAlign: "left",
-                  fontWeight:
-                    selectedBg === bg.id ? "600" : "400",
+                  fontWeight: selectedBg === bg.id ? "600" : "400",
                 }}
               >
                 <img
                   src={bg.path}
                   alt={bg.name}
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: "4px",
-                    marginBottom: "5px",
-                  }}
+                  style={{ width: "100%", height: "auto", borderRadius: "4px", marginBottom: "5px" }}
                 />
                 {bg.name}
               </button>
